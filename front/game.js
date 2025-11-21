@@ -15,7 +15,7 @@ const config = {
 const game = new Phaser.Game(config);
 
 // Game variables
-let dice = []; // Array to store 5 dice graphics objects
+let dice = []; // Array to store 5 Dice instances
 let rollButton;
 let isRolling = false;
 const diceSize = 80;
@@ -55,13 +55,12 @@ function initializeDice(scene) {
   const y = 300;
   
   for (let i = 0; i < diceCount; i++) {
-    const x = startX + i * (diceSize + 20);
+    const centerX = startX + i * (diceSize + 20);
+    const centerY = y;
     const value = rollDice();
-    const diceFace = createDiceFace(scene, value, x - diceSize / 2, y - diceSize / 2, diceSize);
-    // Store original position for animations
-    diceFace.originalX = x - diceSize / 2;
-    diceFace.originalY = y - diceSize / 2;
-    dice.push(diceFace);
+    // Create Dice instance at center position
+    const die = new Dice(scene, centerX, centerY, diceSize, value);
+    dice.push(die);
   }
 }
 
@@ -111,7 +110,7 @@ function rollAllDice(scene) {
   if (isRolling) return;
   
   isRolling = true;
-  playTone(scene, 550, 0.2); // Roll sound
+  playDiceClick(scene, 0.4); // Initial roll click
   
   // Step 1: Scale up animation (anticipation)
   dice.forEach((die) => {
@@ -131,10 +130,15 @@ function rollAllDice(scene) {
     callback: () => {
       rollCount++;
       
+      // Play click sounds during roll (every few frames for clattering effect)
+      if (rollCount % 3 === 0) {
+        playDiceClick(scene, 0.15 + Math.random() * 0.1); // Varied intensity clicks
+      }
+      
       // Update all dice with random values during roll
       dice.forEach((die) => {
         const randomValue = rollDice();
-        updateDiceFace(die, randomValue);
+        die.setValue(randomValue);
         
         // Rotate in discrete steps (every few frames)
         if (rollCount % Math.ceil(maxRolls / rotationSteps) === 0) {
@@ -149,20 +153,25 @@ function rollAllDice(scene) {
         // Final roll - set actual random values and settle
         dice.forEach((die, index) => {
           const finalValue = rollDice();
-          updateDiceFace(die, finalValue);
+          die.setValue(finalValue);
           
           // Step 3: Scale back down with bounce and reset rotation
           scene.tweens.add({
-            targets: die,
+            targets: die.graphics,
             scaleX: 1,
             scaleY: 1,
             angle: 0, // Reset rotation to 0
             duration: 300,
             ease: 'Elastic.easeOut',
+            onUpdate: (tween) => {
+              // Sync the angle property with graphics angle
+              die.angle = die.graphics.angle;
+            },
             onComplete: () => {
+              die.setAngle(0); // Ensure angle is reset
               if (index === dice.length - 1) {
                 isRolling = false;
-                playTone(scene, 330, 0.2); // Settle sound
+                playDiceClick(scene, 0.25); // Final settle click
               }
             }
           });
@@ -180,20 +189,34 @@ function update() {
   // Game loop - no continuous updates needed for dice game
 }
 
-function playTone(scene, frequency, duration) {
+function playDiceClick(scene, intensity = 0.3) {
   const audioContext = scene.sound.context;
-  const oscillator = audioContext.createOscillator();
+  
+  // Create a buffer source with noise for a more realistic dice click
+  const bufferSize = audioContext.sampleRate * 0.01; // 10ms of audio
+  const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+  const data = buffer.getChannelData(0);
+  
+  // Fill with filtered noise (more click-like than pure white noise)
+  for (let i = 0; i < bufferSize; i++) {
+    // Create a percussive click with some randomness
+    const t = i / bufferSize;
+    const decay = Math.pow(1 - t, 2); // Exponential decay
+    const noise = (Math.random() * 2 - 1) * decay;
+    data[i] = noise * intensity;
+  }
+  
+  const source = audioContext.createBufferSource();
   const gainNode = audioContext.createGain();
-
-  oscillator.connect(gainNode);
+  
+  source.buffer = buffer;
+  source.connect(gainNode);
   gainNode.connect(audioContext.destination);
-
-  oscillator.frequency.value = frequency;
-  oscillator.type = 'square';
-
-  gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-  gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
-
-  oscillator.start(audioContext.currentTime);
-  oscillator.stop(audioContext.currentTime + duration);
+  
+  // Quick fade out for clean click
+  gainNode.gain.setValueAtTime(intensity, audioContext.currentTime);
+  gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.01);
+  
+  source.start(audioContext.currentTime);
+  source.stop(audioContext.currentTime + 0.01);
 }
