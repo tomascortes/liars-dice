@@ -1,24 +1,25 @@
-// Dice Generation Module
-// Object-oriented Dice class using Phaser Graphics API
-
 /**
  * Dice Class - Object-oriented dice with position, rotation, and rendering
  */
 class Dice {
-  constructor(scene, x, y, size = 80, initialValue = 1) {
+  constructor(scene, x, y, size = 80, initialValue = 1, config) {
     this.scene = scene;
-    this.x = x; // Center X position
-    this.y = y; // Center Y position
+    this.directionX = 0;
+    this.directionY = 0;
+    this.config = config;
+    this.initialX = x;
+    this.initialY = y;
+    this.x = x;
+    this.y = y;
     this.size = size;
     this.value = Math.max(1, Math.min(6, Math.floor(initialValue)));
     this.angle = 0;
-    this.lastRotationSound = 0; // Track last rotation sound time to avoid spam
+    this.lastRotationSound = 0;
+    this.velocity = 50
     
-    // Create graphics object
     this.graphics = scene.add.graphics();
     this.graphics.setPosition(this.x, this.y);
     
-    // Initial render
     this.render();
   }
 
@@ -34,12 +35,12 @@ class Dice {
   const left_bottom = { x: -base_spacing, y: base_spacing };
   const right_top = { x: base_spacing, y: -base_spacing };
   const patterns = {
-    1: [center], // Center
-    2: [left_top, right_bottom], // Diagonal
-    3: [left_top, center, right_bottom], // Diagonal line
-    4: [left_top, right_bottom, left_bottom, right_top], // Four corners
-    5: [left_top, right_bottom, left_bottom, right_top, center], // Four corners + center
-    6: [left_top, right_bottom, left_bottom, right_top, center, center] // Two columns
+    1: [center],
+    2: [left_top, right_bottom],
+    3: [left_top, center, right_bottom],
+    4: [left_top, right_bottom, left_bottom, right_top],
+    5: [left_top, right_bottom, left_bottom, right_top, center],
+    6: [left_top, right_bottom, left_bottom, right_top, center, center]
   };
   return patterns[value] || patterns[1];
 }
@@ -49,14 +50,12 @@ class Dice {
    */
   playRotationSound() {
     const now = Date.now();
-    // Throttle sounds to avoid too many at once (max 1 per 200ms - much slower)
     if (now - this.lastRotationSound < 200) return;
     this.lastRotationSound = now;
     
     const audioContext = this.scene.sound.context;
     const rand = Math.random();
     
-    // Random selection: tick (40%), tack (35%), clank (25%)
     if (rand < 0.4) {
       this.playTickSound(audioContext);
     } else if (rand < 0.75) {
@@ -67,25 +66,22 @@ class Dice {
   }
   
   /**
-   * Play "tick" sound - high-pitched, short, sharp
+   * Play "tick" sound - high-pitched, short, sharp (120-180 Hz, 8-13ms)
    */
   playTickSound(audioContext) {
     const intensity = 0.12 + Math.random() * 0.15;
-    const duration = 0.008 + Math.random() * 0.005; // 8-13ms
+    const duration = 0.008 + Math.random() * 0.005;
     const bufferSize = Math.floor(audioContext.sampleRate * duration);
     const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
     const data = buffer.getChannelData(0);
     
-    // High frequency: 120-180 Hz
     const baseFreq = 120 + Math.random() * 60;
-    
-    // Sound character: 20-50% noise
     const noiseAmount = 0.2 + Math.random() * 0.3;
     const toneAmount = 1 - noiseAmount;
     
     for (let i = 0; i < bufferSize; i++) {
       const t = i / bufferSize;
-      const decay = Math.pow(1 - t, 2.5); // Fast decay
+      const decay = Math.pow(1 - t, 2.5);
       const sineWave = Math.sin(2 * Math.PI * baseFreq * t / audioContext.sampleRate * bufferSize);
       const noise = (Math.random() * 2 - 1) * noiseAmount;
       data[i] = (sineWave * toneAmount + noise) * decay * intensity;
@@ -95,25 +91,22 @@ class Dice {
   }
   
   /**
-   * Play "tack" sound - lower-pitched, longer, deeper
+   * Play "tack" sound - lower-pitched, longer, deeper (60-100 Hz, 15-25ms)
    */
   playTackSound(audioContext) {
     const intensity = 0.12 + Math.random() * 0.15;
-    const duration = 0.015 + Math.random() * 0.01; // 15-25ms
+    const duration = 0.015 + Math.random() * 0.01;
     const bufferSize = Math.floor(audioContext.sampleRate * duration);
     const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
     const data = buffer.getChannelData(0);
     
-    // Lower frequency: 60-100 Hz
     const baseFreq = 60 + Math.random() * 40;
-    
-    // Sound character: 20-50% noise
     const noiseAmount = 0.2 + Math.random() * 0.3;
     const toneAmount = 1 - noiseAmount;
     
     for (let i = 0; i < bufferSize; i++) {
       const t = i / bufferSize;
-      const decay = Math.pow(1 - t, 1.8); // Slower decay
+      const decay = Math.pow(1 - t, 1.8);
       const sineWave = Math.sin(2 * Math.PI * baseFreq * t / audioContext.sampleRate * bufferSize);
       const noise = (Math.random() * 2 - 1) * noiseAmount;
       data[i] = (sineWave * toneAmount + noise) * decay * intensity;
@@ -123,27 +116,23 @@ class Dice {
   }
   
   /**
-   * Play "clank" sound - wood clank, lowest pitch, longest, most resonant
+   * Play "clank" sound - wood clank, lowest pitch, longest, most resonant (40-80 Hz, 20-30ms)
    */
   playClankSound(audioContext) {
-    const intensity = 0.15 + Math.random() * 0.1; // Slightly louder
-    const duration = 0.02 + Math.random() * 0.01; // 20-30ms
+    const intensity = 0.15 + Math.random() * 0.1;
+    const duration = 0.02 + Math.random() * 0.01;
     const bufferSize = Math.floor(audioContext.sampleRate * duration);
     const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
     const data = buffer.getChannelData(0);
     
-    // Lowest frequency: 40-80 Hz (wood clank)
     const baseFreq = 40 + Math.random() * 40;
-    
-    // More resonant, less noise (10-30% noise)
     const noiseAmount = 0.1 + Math.random() * 0.2;
     const toneAmount = 1 - noiseAmount;
     
     for (let i = 0; i < bufferSize; i++) {
       const t = i / bufferSize;
-      const decay = Math.pow(1 - t, 1.5); // Slowest decay for resonance
+      const decay = Math.pow(1 - t, 1.5);
       
-      // Add harmonics for more resonant wood clank sound
       const fundamental = Math.sin(2 * Math.PI * baseFreq * t / audioContext.sampleRate * bufferSize);
       const harmonic2 = Math.sin(2 * Math.PI * baseFreq * 2 * t / audioContext.sampleRate * bufferSize) * 0.3;
       const harmonic3 = Math.sin(2 * Math.PI * baseFreq * 3 * t / audioContext.sampleRate * bufferSize) * 0.15;
@@ -167,7 +156,6 @@ class Dice {
     source.connect(gainNode);
     gainNode.connect(audioContext.destination);
     
-    // Fade out
     gainNode.gain.setValueAtTime(intensity, audioContext.currentTime);
     gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
     
@@ -197,20 +185,16 @@ class Dice {
     this.graphics.fillStyle(0xffffff, 1);
     this.graphics.fillRoundedRect(x, y, this.size, this.size, cornerRadius);
 
-    // Draw shadow on bottom and right sides only (for 3D effect)
     this.graphics.lineStyle(borderWidth, 0x000000, 0.4);
-    // Bottom edge shadow
     this.graphics.beginPath();
     this.graphics.moveTo(x + cornerRadius, y + this.size);
     this.graphics.lineTo(x + this.size - cornerRadius, y + this.size);
     this.graphics.strokePath();
-    // Right edge shadow
     this.graphics.beginPath();
     this.graphics.moveTo(x + this.size, y + cornerRadius);
     this.graphics.lineTo(x + this.size, y + this.size - cornerRadius);
     this.graphics.strokePath();
     
-    // Main border on all sides
     this.graphics.lineStyle(borderWidth, 0x000000, 1);
     this.graphics.strokeRoundedRect(x, y, this.size, this.size, cornerRadius);
     
@@ -226,15 +210,14 @@ class Dice {
     const y = -this.size / 2;
     const centerX = x + this.size / 2;
     const centerY = y + this.size / 2;
-    const dotSize = this.size * 0.15; // 15% of dice size for square dots
-    const spacing = this.size * 0.25; // 25% of dice size for spacing
-    const shadowOffset = 1; // 1 pixel shadow offset
+    const dotSize = this.size * 0.15;
+    const spacing = this.size * 0.25;
+    const shadowOffset = 1;
   
   pattern.forEach(dot => {
     const dotX = centerX + (dot.x * spacing);
     const dotY = centerY + (dot.y * spacing);
       
-      // Draw shadow first (slightly offset to bottom-right)
       this.graphics.fillStyle(0x000000, 0.3);
       this.graphics.fillRect(
         dotX - dotSize / 2 + shadowOffset, 
@@ -243,7 +226,6 @@ class Dice {
         dotSize
       );
       
-      // Draw main square on top
       this.graphics.fillStyle(0x000000, 1);
       this.graphics.fillRect(dotX - dotSize / 2, dotY - dotSize / 2, dotSize, dotSize);
   });
@@ -270,12 +252,10 @@ class Dice {
    * Update rotation angle with sound
    */
   setAngle(angle) {
-    // Only play sound on larger angle changes (less frequent ticks)
-    const angleChanged = Math.abs(this.angle - angle) > 50; // Larger threshold = fewer sounds
+    const angleChanged = Math.abs(this.angle - angle) > 50;
     this.angle = angle;
     this.graphics.setAngle(angle);
     
-    // Play rotation sound when angle changes significantly
     if (angleChanged) {
       this.playRotationSound();
     }
@@ -296,16 +276,83 @@ class Dice {
   setScale(scale) {
     this.graphics.setScale(scale);
   }
+
+  moveRandom(rollCount, maxRolls) {
+    // 1. Initialize direction on first call (rollCount starts at 1 after increment)
+    if (rollCount === 1) {
+      const angle = Math.random() * 2 * Math.PI;
+      this.directionX = Math.cos(angle) * this.velocity;
+      this.directionY = Math.sin(angle) * this.velocity;
+    }
+    
+    // 2. Determine phase: first half (random movement) or second half (return to origin)
+    const isSecondHalf = rollCount / maxRolls >= 0.5;
+    
+    if (isSecondHalf) {
+      // SECOND HALF: Move back toward initial position
+      let targetX = this.x;
+      let targetY = this.y;
+      
+      // Calculate direction toward initial position
+      const deltaX = this.initialX - this.x + this.directionX*(1- rollCount/maxRolls);
+      const deltaY = this.initialY - this.y + this.directionY*(1 - rollCount/maxRolls);
+      
+      // Move one step toward initial position
+      if (Math.abs(deltaX) > 0) {
+        const stepX = deltaX > 0 ? this.velocity : -this.velocity;
+        targetX = this.x + stepX;
+        
+        // Clamp to initial position if close enough (avoid overshooting)
+        if (Math.abs(deltaX) < this.velocity) {
+          targetX = this.initialX;
+        }
+      } else {
+        targetX = this.initialX;
+      }
+      
+      if (Math.abs(deltaY) > 0) {
+        const stepY = deltaY > 0 ? this.velocity : -this.velocity;
+        targetY = this.y + stepY;
+        
+        // Clamp to initial position if close enough (avoid overshooting)
+        if (Math.abs(deltaY) < this.velocity) {
+          targetY = this.initialY;
+        }
+      } else {
+        targetY = this.initialY;
+      }
+      
+      // Update position
+      this.x = targetX;
+      this.y = targetY;
+      this.setPosition(this.x, this.y);
+    } else {
+      // FIRST HALF: Move randomly with bouncing off walls
+      let newX = this.x + this.directionX;
+      let newY = this.y + this.directionY;
+      
+      // Handle wall bouncing
+      if (newX < 0 || newX > this.config.width) {
+        this.directionX = -this.directionX;
+        newX = this.x + this.directionX;
+      }
+      if (newY < 0 || newY > this.config.height) {
+        this.directionY = -this.directionY;
+        newY = this.y + this.directionY;
+      }
+      
+      // Update position (both internal state and graphics)
+      this.x = newX;
+      this.y = newY;
+      this.setPosition(this.x, this.y);
+    }
+  }
 }
 
-/**
- * Generate a random dice value (1-6) - utility function
- */
 function rollDice() {
   return Math.floor(Math.random() * 6) + 1;
 }
 
-// Export functions and class (if using modules, otherwise they'll be global)
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     Dice,

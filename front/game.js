@@ -18,8 +18,8 @@ const game = new Phaser.Game(config);
 let dice = []; // Array to store 5 Dice instances
 let rollButton;
 let isRolling = false;
-const diceSize = 80;
-const diceCount = 5;
+let diceSize = 40;
+let diceCount = 5;
 
 function create() {
   const scene = this;
@@ -59,7 +59,7 @@ function initializeDice(scene) {
     const centerY = y;
     const value = rollDice();
     // Create Dice instance at center position
-    const die = new Dice(scene, centerX, centerY, diceSize, value);
+    const die = new Dice(scene, centerX, centerY, diceSize, value, config);
     dice.push(die);
   }
 }
@@ -112,14 +112,13 @@ function rollAllDice(scene) {
   isRolling = true;
   playDiceClick(scene, 0.4); // Initial roll click
   
-  // Step 1: Scale up animation (anticipation)
   dice.forEach((die) => {
     die.setScale(1.15);
   });
   
   // Step 2: Roll animation - rapidly change values and rotate in steps
   let rollCount = 0;
-  const maxRolls = 12;
+  const maxRolls = 12*3;
   const rollInterval = 40; // milliseconds - faster for smoother effect
   const rotationSteps = 5; // Number of discrete rotation steps
   const totalRotation = 360 * 3; // Rotate 3 full turns during roll
@@ -146,6 +145,9 @@ function rollAllDice(scene) {
           const targetAngle = currentStep * rotationPerStep;
           die.setAngle(targetAngle);
         }
+        
+        // Move dice during roll animation
+        die.moveRandom(rollCount, maxRolls);
       });
       
       // Check if we've reached the final roll
@@ -155,19 +157,23 @@ function rollAllDice(scene) {
           const finalValue = rollDice();
           die.setValue(finalValue);
           
-          // Step 3: Scale back down with bounce and reset rotation
+          // Step 3: Scale back down with bounce and reset rotation, return to initial position
           scene.tweens.add({
             targets: die.graphics,
             scaleX: 1,
             scaleY: 1,
             angle: 0, // Reset rotation to 0
+            x: die.initialX,
+            y: die.initialY,
             duration: 300,
             ease: 'Elastic.easeOut',
             onUpdate: (tween) => {
-              // Sync the angle property with graphics angle
               die.angle = die.graphics.angle;
+              die.x = die.graphics.x;
+              die.y = die.graphics.y;
             },
             onComplete: () => {
+              die.setPosition(die.initialX, die.initialY);
               die.setAngle(0); // Ensure angle is reset
               if (index === dice.length - 1) {
                 isRolling = false;
