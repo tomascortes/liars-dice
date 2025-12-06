@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phaser Game</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    #game-container {
+      position: relative;
+    }
+
+    #game-frame {
+      border: 2px solid #333;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(255, 255, 255, 0.1);
+    }
+  </style>
+</head>
+
+<body>
+  <div id="game-container">
+    <iframe id="game-frame" width="800" height="600" sandbox="allow-scripts allow-same-origin"></iframe>
+  </div>
+
+  <script>
+    // Load game in iframe
+    async function loadGame() {
+      const iframe = document.getElementById('game-frame');
+      iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+
+      try {
+        const [diceResponse, gameResponse] = await Promise.all([
+          fetch('/dice.js'),
+          fetch('/game.js')
+        ]);
+
+        if (!diceResponse.ok) throw new Error(`Failed to fetch dice.js: ${diceResponse.status}`);
+        if (!gameResponse.ok) throw new Error(`Failed to fetch game.js: ${gameResponse.status}`);
+
+        const diceCode = await diceResponse.text();
+        const gameCode = await gameResponse.text();
+
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+        iframeDoc.open();
+        iframeDoc.write(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <style>
+              body { margin: 0; padding: 0; overflow: hidden; background: #000; }
+            </style>
+            <script>
+              ${diceCode}
+              window.initGame = function() {
+                console.log('Phaser loaded, initializing game...');
+                try {
+                  ${gameCode}
+                  console.log('Game initialized successfully');
+                } catch (error) {
+                  console.error('Game initialization error:', error);
+                }
+              };
+            <\/script>
+            <script src="https://cdn.jsdelivr.net/npm/phaser@3.87.0/dist/phaser.min.js" onload="initGame()"><\/script>
+          </head>
+          <body></body>
+          </html>
+        `);
+        iframeDoc.close();
+      } catch (error) {
+        console.error('Failed to load game:', error);
+      }
+    }
+
+    // Load game when ready
+    loadGame();
+  </script>
+</body>
+
+</html>
