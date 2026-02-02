@@ -84,8 +84,8 @@
 
       try {
         const [diceResponse, gameResponse] = await Promise.all([
-          fetch('/dice.js'),
-          fetch('/game.js')
+          fetch('./dice.js'),
+          fetch('./game.js')
         ]);
 
         if (!diceResponse.ok) throw new Error(`Failed to fetch dice.js: ${diceResponse.status}`);
