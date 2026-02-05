@@ -30,13 +30,11 @@
     }
 
     body {
-      background: #1a1a2e;
+      background: #000;
       display: flex;
       align-items: center;
       justify-content: center;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      /* Prevent pull-to-refresh on mobile */
-      overscroll-behavior: none;
       overflow: hidden;
       margin: 0;
       padding: 0;
@@ -47,45 +45,8 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 100%;
-      height: 100%;
-      padding: 10px;
-    }
-
-    #game-frame {
-      border: 2px solid #333;
-      border-radius: 8px;
-      box-shadow: 0 4px 20px rgba(255, 255, 255, 0.1);
-      width: 800px;
-      height: 600px;
-      max-width: 100%;
-      max-height: 100%;
-      transform-origin: center center;
-      /* Scale will be set dynamically via JavaScript */
-      /* Improve touch interactions */
-      touch-action: manipulation;
-    }
-
-    /* Handle safe areas for modern devices with notches */
-    @supports (padding: env(safe-area-inset-top)) {
-      #game-container {
-        padding-top: max(10px, env(safe-area-inset-top));
-        padding-bottom: max(10px, env(safe-area-inset-bottom));
-        padding-left: max(10px, env(safe-area-inset-left));
-        padding-right: max(10px, env(safe-area-inset-right));
-      }
-    }
-
-    /* Prevent text selection and long press menus on mobile */
-    #game-container,
-    #game-frame {
-      -webkit-touch-callout: none;
-      -webkit-user-select: none;
-      user-select: none;
-    }
-
-    width: 100vw;
-    height: 100vh;
+      width: 100vw;
+      height: 100vh;
     }
 
     /* Phaser will scale automatically using ScaleManager */
@@ -97,141 +58,10 @@
     <div id="phaser-game"></div>
   </div>
 
-  <<<<<<< HEAD <script>
-    // Responsive scaling for any screen size
-    function updateGameScale() {
-    const iframe = document.getElementById('game-frame');
-    const container = document.getElementById('game-container');
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.87.0/dist/phaser.min.js"></script>
+  <script src="./dice.js"></script>
+  <script src="./game.js"></script>
 
-    if (!iframe || !container) return;
-
-    // Game native dimensions
-    const gameWidth = 800;
-    const gameHeight = 600;
-    const gameRatio = gameWidth / gameHeight;
-
-    // Get computed style to account for safe areas
-    const containerStyle = getComputedStyle(container);
-    const paddingTop = parseFloat(containerStyle.paddingTop) || 10;
-    const paddingBottom = parseFloat(containerStyle.paddingBottom) || 10;
-    const paddingLeft = parseFloat(containerStyle.paddingLeft) || 10;
-    const paddingRight = parseFloat(containerStyle.paddingRight) || 10;
-
-    // Available space accounting for padding
-    const availableWidth = window.innerWidth - paddingLeft - paddingRight;
-    const availableHeight = window.innerHeight - paddingTop - paddingBottom;
-    const screenRatio = availableWidth / availableHeight;
-
-    let scale;
-
-    // Calculate scale to fit while maintaining aspect ratio
-    if (screenRatio > gameRatio) {
-    // Screen is wider than game - fit by height
-    scale = availableHeight / gameHeight;
-    } else {
-    // Screen is taller than game - fit by width
-    scale = availableWidth / gameWidth;
-    }
-
-    // Cap scale at 1 to avoid upscaling on large screens
-    scale = Math.min(scale, 1);
-
-    // Apply transform
-    iframe.style.transform = `scale(${scale})`;
-    }
-
-    // Debounced resize handler for better performance
-    let resizeTimeout;
-    function handleResize() {
-    clearTimeout(resizeTimeout);
-    resizeTimeout = setTimeout(updateGameScale, 50);
-    }
-
-    // Update on load and resize
-    window.addEventListener('resize', handleResize);
-    window.addEventListener('orientationchange', () => {
-    // Delay to allow orientation change to complete
-    setTimeout(updateGameScale, 150);
-    });
-
-    // Also update when visual viewport changes (mobile keyboard, etc.)
-    if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', handleResize);
-    }
-
-    // Initial scale after DOM is ready
-    if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', updateGameScale);
-    } else {
-    updateGameScale();
-    }
-
-    // Load game in iframe
-    async function loadGame() {
-    const iframe = document.getElementById('game-frame');
-    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
-
-    try {
-    const baseUrl = document.querySelector('base')?.href || window.location.origin + '/';
-    const [diceResponse, gameResponse] = await Promise.all([
-    fetch('./dice.js'),
-    fetch('./game.js')
-    ]);
-
-    if (!diceResponse.ok) throw new Error(`Failed to fetch dice.js: ${diceResponse.status}`);
-    if (!gameResponse.ok) throw new Error(`Failed to fetch game.js: ${gameResponse.status}`);
-
-    const diceCode = await diceResponse.text();
-    const gameCode = await gameResponse.text();
-
-    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-    iframeDoc.open();
-    iframeDoc.write(`
-    <!DOCTYPE html>
-    <html>
-
-    <head>
-      <meta charset="UTF-8">
-      <style>
-        body {
-          margin: 0;
-          padding: 0;
-          overflow: hidden;
-          background: #000;
-        }
-      </style>
-      <script>
-              ${ diceCode }
-        window.initGame = function () {
-          console.log('Phaser loaded, initializing game...');
-          try {
-                  ${ gameCode }
-            console.log('Game initialized successfully');
-          } catch (error) {
-            console.error('Game initialization error:', error);
-          }
-        };
-            <\/script>
-          < script src = "https://cdn.jsdelivr.net/npm/phaser@3.87.0/dist/phaser.min.js" onload = "initGame()" ><\/script>
-          </head >
-          <body></body>
-          </html >
-        `);
-        iframeDoc.close();
-      } catch (error) {
-        console.error('Failed to load game:', error);
-      }
-    }
-
-    // Load game when ready
-    loadGame();
-      </script>
-      =======
-      <script src="https://cdn.jsdelivr.net/npm/phaser@3.87.0/dist/phaser.min.js"></script>
-      <script src="./dice.js"></script>
-      <script src="./game.js"></script>
-      >>>>>>> 8b73d62 (feat: integrate Phaser directly into the main page with ScaleManager for responsiveness and
-      update dice positioning to support multiple rows.)
 </body>
 
 </html>
