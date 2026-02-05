@@ -3,9 +3,15 @@
 
 const config = {
   type: Phaser.AUTO,
-  width: '100%',
-  height: '100%',
-
+  width: 450,
+  height: 630,
+  scale: {
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+    parent: 'phaser-game',
+    width: 450,
+    height: 630
+  },
   backgroundColor: '#2c3e50',
   scene: {
     create: create,
@@ -50,12 +56,26 @@ function initializeDice(scene) {
   dice.forEach(die => die.destroy());
   dice = [];
 
-  const startX = 225 - ((diceCount * diceSize + (diceCount - 1) * 20) / 2) + diceSize / 2;
-  const y = 280; // Positioned for 450x630 canvas
+  const maxDicePerRow = 6; // Maximum dice per row to prevent overflow
+  const spacing = 20; // Space between dice
+  const baseY = 280; // Base Y position for first row
+  const rowSpacing = diceSize + 25; // Vertical spacing between rows
 
   for (let i = 0; i < diceCount; i++) {
-    const centerX = startX + i * (diceSize + 20);
-    const centerY = y;
+    // Calculate which row this die belongs to
+    const row = Math.floor(i / maxDicePerRow);
+    const positionInRow = i % maxDicePerRow;
+
+    // Calculate number of dice in this row (last row might have fewer)
+    const diceInThisRow = Math.min(maxDicePerRow, diceCount - row * maxDicePerRow);
+
+    // Center this row based on how many dice it contains
+    const rowWidth = diceInThisRow * diceSize + (diceInThisRow - 1) * spacing;
+    const startX = 225 - rowWidth / 2 + diceSize / 2;
+
+    const centerX = startX + positionInRow * (diceSize + spacing);
+    const centerY = baseY + row * rowSpacing;
+
     const value = rollDice();
     // Create Dice instance at center position
     const die = new Dice(scene, centerX, centerY, diceSize, value, config);
