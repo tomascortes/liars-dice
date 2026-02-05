@@ -3,8 +3,9 @@
 
 const config = {
   type: Phaser.AUTO,
-  width: 800,
-  height: 600,
+  width: '100%',
+  height: '100%',
+
   backgroundColor: '#2c3e50',
   scene: {
     create: create,
@@ -49,8 +50,8 @@ function initializeDice(scene) {
   dice.forEach(die => die.destroy());
   dice = [];
 
-  const startX = 400 - ((diceCount * diceSize + (diceCount - 1) * 20) / 2) + diceSize / 2;
-  const y = 250; // Moved up from 300 to make room for buttons below
+  const startX = 225 - ((diceCount * diceSize + (diceCount - 1) * 20) / 2) + diceSize / 2;
+  const y = 280; // Positioned for 450x630 canvas
 
   for (let i = 0; i < diceCount; i++) {
     const centerX = startX + i * (diceSize + 20);
@@ -66,12 +67,12 @@ function createRollButton(scene) {
   // Create button background
   const buttonBg = scene.add.graphics();
   buttonBg.fillStyle(0x3498db, 1);
-  buttonBg.fillRoundedRect(300, 480, 200, 60, 10); // Moved down from 450
+  buttonBg.fillRoundedRect(125, 500, 200, 60, 10); // Centered for 450px width
   buttonBg.lineStyle(3, 0x2980b9, 1);
-  buttonBg.strokeRoundedRect(300, 480, 200, 60, 10);
+  buttonBg.strokeRoundedRect(125, 500, 200, 60, 10);
 
   // Button text
-  const buttonText = scene.add.text(400, 510, 'ROLL DICE', { // Updated Y position
+  const buttonText = scene.add.text(225, 530, 'ROLL DICE', { // Centered for 450px width
     fontSize: '28px',
     fontFamily: 'Arial, sans-serif',
     color: '#ffffff',
@@ -80,7 +81,7 @@ function createRollButton(scene) {
   }).setOrigin(0.5);
 
   // Make button interactive
-  buttonBg.setInteractive(new Phaser.Geom.Rectangle(300, 480, 200, 60), Phaser.Geom.Rectangle.Contains);
+  buttonBg.setInteractive(new Phaser.Geom.Rectangle(125, 500, 200, 60), Phaser.Geom.Rectangle.Contains);
   buttonBg.on('pointerdown', () => {
     if (!isRolling) {
       rollAllDice(scene);
@@ -89,16 +90,16 @@ function createRollButton(scene) {
   buttonBg.on('pointerover', () => {
     buttonBg.clear();
     buttonBg.fillStyle(0x5dade2, 1);
-    buttonBg.fillRoundedRect(300, 480, 200, 60, 10);
+    buttonBg.fillRoundedRect(125, 500, 200, 60, 10);
     buttonBg.lineStyle(3, 0x3498db, 1);
-    buttonBg.strokeRoundedRect(300, 480, 200, 60, 10);
+    buttonBg.strokeRoundedRect(125, 500, 200, 60, 10);
   });
   buttonBg.on('pointerout', () => {
     buttonBg.clear();
     buttonBg.fillStyle(0x3498db, 1);
-    buttonBg.fillRoundedRect(300, 480, 200, 60, 10);
+    buttonBg.fillRoundedRect(125, 500, 200, 60, 10);
     buttonBg.lineStyle(3, 0x2980b9, 1);
-    buttonBg.strokeRoundedRect(300, 480, 200, 60, 10);
+    buttonBg.strokeRoundedRect(125, 500, 200, 60, 10);
   });
 
   rollButton = { bg: buttonBg, text: buttonText };
@@ -109,10 +110,10 @@ function createValueSelector(scene) {
   const buttonSize = 45;
   const spacing = 10;
   const totalWidth = (buttonSize * 6) + (spacing * 5);
-  const startX = 400 - totalWidth / 2;
+  const startX = 225 - totalWidth / 2;
 
   // Title text
-  scene.add.text(400, 40, 'Select Dice Value:', {
+  scene.add.text(225, 40, 'Select Dice Value:', {
     fontSize: '18px',
     fontFamily: 'Arial, sans-serif',
     color: '#ecf0f1',
@@ -194,9 +195,9 @@ function createValueSelector(scene) {
 }
 
 function createDiceControls(scene) {
-  const y = 565; // Moved down to avoid overlap with result text
+  const y = 595; // Positioned for 630px height
   const spacing = 60;
-  const centerX = 400;
+  const centerX = 225;
 
   // Dice count display
   diceCountText = scene.add.text(centerX, y, `Dice: ${diceCount}`, {
